@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {HighchartsChartComponent} from 'highcharts-angular';
 
@@ -8,7 +8,15 @@ import { Subscription } from 'rxjs';
 
 import { TelemetryService } from '../services/telemetry.service';
 import { UnitConversionService } from '../services/unit-conversion.service';
+import { ExportService } from '../services/export.service';
 
+
+interface ITelemetryData {
+  velocity:any,
+  pressure:any,
+  temperature:any,
+  [key: string]: any;
+}
 @Component({
   selector: 'app-root',
   standalone: true,
@@ -21,6 +29,8 @@ import { UnitConversionService } from '../services/unit-conversion.service';
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss']
 })
+
+
 export class AppComponent implements OnInit, OnDestroy {
 
   isDarkMode = false;
@@ -36,10 +46,12 @@ export class AppComponent implements OnInit, OnDestroy {
   tempChartOptions: Highcharts.Options = {};
 
   updateFlag = false;
+  data= signal<ITelemetryData>({velocity:1,pressure:1,temperature:1});
 
   constructor(
     public telemetryService: TelemetryService,
-    public converter: UnitConversionService
+    public converter: UnitConversionService,
+    private exportService :ExportService
   ) {}
 
   ngOnInit(): void {
@@ -52,8 +64,8 @@ export class AppComponent implements OnInit, OnDestroy {
         .subscribe({
 
           next: (data: any) => {
-
             if (data) {
+              this.data.set(data);
               this.updateCharts(data);
             }
 
@@ -65,10 +77,6 @@ export class AppComponent implements OnInit, OnDestroy {
 
         });
   }
-
-  // --------------------------------------------------
-  // CHART CONFIGURATION
-  // --------------------------------------------------
 
   initChartConfigs(): void {
 
@@ -289,11 +297,6 @@ export class AppComponent implements OnInit, OnDestroy {
 
   }
 
-
-  // --------------------------------------------------
-  // UPDATE CHARTS
-  // --------------------------------------------------
-
   updateCharts(data: any): void {
 
     // -----------------------------
@@ -490,11 +493,6 @@ export class AppComponent implements OnInit, OnDestroy {
 
   }
 
-
-  // --------------------------------------------------
-  // UNIT CHANGE
-  // --------------------------------------------------
-
   onUnitChange(
     type: 'velocity' | 'pressure' | 'temperature',
     event: Event
@@ -508,11 +506,6 @@ export class AppComponent implements OnInit, OnDestroy {
 
   }
 
-
-  // --------------------------------------------------
-  // DARK / LIGHT THEME
-  // --------------------------------------------------
-
   toggleTheme(): void {
 
     this.isDarkMode =
@@ -524,7 +517,38 @@ export class AppComponent implements OnInit, OnDestroy {
     );
 
   }
+  
+  private prepareExportData(): Record<string, any>[] {
+    const currentData = this.data();
+    if (!currentData?.velocity?.history) return [];
 
+    const velocityHistory = currentData.velocity.history;
+    const pressureMap = new Map(
+      (currentData.pressure?.history || []).map((h: any) => [h.time, h.value])
+    );
+    const tempMap = new Map(
+      (currentData.temperature?.history || []).map((h: any) => [h.time, h.value])
+    );
+
+    return velocityHistory.map((item: any) => ({
+      Timestamp: item.time,
+      [`Velocity (${currentData.velocity.unit})`]: item.value,
+      [`Pressure (${currentData.pressure?.unit ?? ''})`]: pressureMap.get(item.time) ?? 'N/A',
+      [`Temperature (${currentData.temperature?.unit ?? ''})`]: tempMap.get(item.time) ?? 'N/A'
+    }));
+  }
+
+  downloadCSV(): void {
+    const exportData = this.prepareExportData();
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    this.exportService.exportToCsv(exportData, `telemetry_export_${timestamp}`);
+  }
+
+  downloadExcel(): void {
+    const exportData = this.prepareExportData();
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    this.exportService.exportToExcel(exportData, `telemetry_export_${timestamp}`);
+  }
 
   // --------------------------------------------------
   // CLEANUP

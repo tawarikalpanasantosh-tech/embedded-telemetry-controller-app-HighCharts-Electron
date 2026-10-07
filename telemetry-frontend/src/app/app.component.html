@@ -34,7 +34,14 @@
 
 
     <div class="controls-section">
-
+    <div class="export-actions">
+      <button class="btn btn-csv" (click)="downloadCSV()">
+        📄 Export CSV
+      </button>
+      <button class="btn btn-excel" (click)="downloadExcel()">
+        📊 Export Excel (.xlsx)
+      </button>
+    </div>
       <span
         class="last-updated"
         *ngIf="
