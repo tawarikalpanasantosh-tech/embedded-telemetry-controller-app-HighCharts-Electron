@@ -1,0 +1,328 @@
+<div
+  class="dashboard-container"
+  [class.dark-theme]="isDarkMode"
+>
+
+  <header class="top-bar">
+
+    <div class="title-section">
+
+      <h1>
+        Embedded Controller Dashboard
+      </h1>
+
+      <div
+        class="connection-status"
+        [class.connected]="
+          telemetryService.isConnected$ | async
+        "
+      >
+
+        <span class="status-dot"></span>
+
+        <span>
+          {{
+            (telemetryService.isConnected$ | async)
+              ? 'Connected'
+              : 'Disconnected'
+          }}
+        </span>
+
+      </div>
+
+    </div>
+
+
+    <div class="controls-section">
+
+      <span
+        class="last-updated"
+        *ngIf="
+          telemetryService.lastUpdated$ | async
+          as lastUpdated
+        "
+      >
+
+        Last Updated:
+        {{ lastUpdated | date:'HH:mm:ss' }}
+
+      </span>
+
+
+      <button
+        class="theme-btn"
+        (click)="toggleTheme()"
+      >
+
+        {{
+          isDarkMode
+            ? '☀️ Light Theme'
+            : '🌙 Dark Theme'
+        }}
+
+      </button>
+
+    </div>
+
+  </header>
+
+
+  <div
+    class="loading-overlay"
+    *ngIf="
+      telemetryService.isLoading$ | async
+    "
+  >
+
+    <div class="spinner"></div>
+
+    <p>
+      Connecting to controller telemetry stream...
+    </p>
+
+  </div>
+
+
+  <main class="dashboard-grid">
+
+
+    <div class="telemetry-card">
+
+      <div class="card-header">
+
+        <h3>
+          Velocity
+        </h3>
+
+
+        <select
+          (change)="
+            onUnitChange('velocity', $event)
+          "
+        >
+
+          <option
+            value="cm/s"
+            selected
+          >
+            cm/s
+          </option>
+
+          <option value="mm/s">
+            mm/s
+          </option>
+
+          <option value="m/s">
+            m/s
+          </option>
+
+          <option value="km/h">
+            km/h
+          </option>
+
+          <option value="ft/s">
+            ft/s
+          </option>
+
+        </select>
+
+      </div>
+
+
+
+      <div class="gauge-wrapper">
+
+        <highcharts-chart
+          [options]="velocityGaugeOptions"
+          [(update)]="updateFlag"
+          style="
+            width: 100%;
+            height: 200px;
+            display: block;
+          "
+        >
+        </highcharts-chart>
+
+      </div>
+
+
+
+      <div class="chart-wrapper">
+
+        <highcharts-chart
+          [options]="velocityChartOptions"
+          [(update)]="updateFlag"
+          style="
+            width: 100%;
+            height: 400px;
+            display: block;
+          "
+        >
+        </highcharts-chart>
+
+      </div>
+
+    </div>
+
+
+    <div class="telemetry-card">
+
+      <div class="card-header">
+
+        <h3>
+          Pressure
+        </h3>
+
+
+        <select
+          (change)="
+            onUnitChange('pressure', $event)
+          "
+        >
+
+          <option
+            value="mbar"
+            selected
+          >
+            mbar
+          </option>
+
+          <option value="Pa">
+            Pa
+          </option>
+
+          <option value="kPa">
+            kPa
+          </option>
+
+          <option value="bar">
+            bar
+          </option>
+
+          <option value="psi">
+            psi
+          </option>
+
+          <option value="atm">
+            atm
+          </option>
+
+        </select>
+
+      </div>
+
+
+      <!-- PRESSURE GAUGE -->
+
+      <div class="gauge-wrapper">
+
+        <highcharts-chart
+          [options]="pressureGaugeOptions"
+          [(update)]="updateFlag"
+          style="
+            width: 100%;
+            height: 200px;
+            display: block;
+          "
+        >
+        </highcharts-chart>
+
+      </div>
+
+
+      <!-- PRESSURE HISTORY -->
+
+      <div class="chart-wrapper">
+
+        <highcharts-chart
+          [options]="pressureChartOptions"
+          [(update)]="updateFlag"
+          style="
+            width: 100%;
+            height: 400px;
+            display: block;
+          "
+        >
+        </highcharts-chart>
+
+      </div>
+
+    </div>
+
+
+    <div class="telemetry-card">
+
+      <div class="card-header">
+
+        <h3>
+          Temperature
+        </h3>
+
+
+        <select
+          (change)="
+            onUnitChange('temperature', $event)
+          "
+        >
+
+          <option
+            value="°C"
+            selected
+          >
+            °C
+          </option>
+
+          <option value="°F">
+            °F
+          </option>
+
+          <option value="K">
+            K
+          </option>
+
+        </select>
+
+      </div>
+
+
+      <!-- TEMPERATURE GAUGE -->
+
+      <div class="gauge-wrapper">
+
+        <highcharts-chart
+          [options]="tempGaugeOptions"
+          [(update)]="updateFlag"
+          style="
+            width: 100%;
+            height: 200px;
+            display: block;
+          "
+        >
+        </highcharts-chart>
+
+      </div>
+
+
+      <!-- TEMPERATURE HISTORY -->
+
+      <div class="chart-wrapper">
+
+        <highcharts-chart
+          [options]="tempChartOptions"
+          [(update)]="updateFlag"
+          style="
+            width: 100%;
+            height: 400px;
+            display: block;
+          "
+        >
+        </highcharts-chart>
+
+      </div>
+
+    </div>
+
+
+  </main>
+
+</div>
